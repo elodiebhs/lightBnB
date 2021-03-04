@@ -9,7 +9,7 @@ const pool = new Pool({
   user: 'vagrant',
   password: '123',
   host: 'localhost',
-  database: 'lightBnB'
+  database: 'lightbnb'
 });
 /// Users
 
@@ -24,7 +24,7 @@ const getUserWithEmail = function(email) {
   //The promise should resolve with the user that has that email address, or null if that user does not exist.
   return pool
   .query("SELECT * FROM users WHERE email= $1", [email])
-  .then((data) => data.rows[0])
+  .then((data) => (data.rows[0]))
   .catch((err) => {
     return null;
   });
@@ -40,8 +40,8 @@ exports.getUserWithEmail = getUserWithEmail;
 const getUserWithId = function(id) {
   //Will do the same as getUserWithEmail, but using the user's id instead of email.
   return pool
-  .query("SELECT * FROM users WHERE email= $1", [id])
-  .then((data) => data.rows[0])
+  .query('SELECT * FROM users WHERE id = $1', [id])
+  .then((data) => (data.rows[0]))
   .catch((err) => {
     return null;
   });
@@ -75,7 +75,20 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  return pool
+  .query(`
+  SELECT reservations.*, properties.*, avg(property_reviews.rating)as average_rating
+  FROM reservations
+  JOIN properties ON properties.id = reservations.property_id
+  JOIN property_reviews ON property_reviews.property_id = properties.id
+  WHERE reservations.guest_id = $1
+  AND reservations.end_date <= NOW()::date
+  GROUP BY reservations.id, properties.id
+  ORDER BY start_date
+  LIMIT $2;
+
+  `, [guest_id,limit])
+  .then(res => res.rows);
 }
 exports.getAllReservations = getAllReservations;
 
