@@ -2,6 +2,7 @@ const properties = require('./json/properties.json');
 const users = require('./json/users.json');
 
 const { Pool } = require('pg');
+const { password } = require('pg/lib/defaults');
 
 //Connect to the lightBnB database
 const pool = new Pool({
@@ -45,7 +46,7 @@ const getUserWithId = function(id) {
     return null;
   });
 };
-}
+
 exports.getUserWithId = getUserWithId;
 
 
@@ -55,11 +56,15 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser =  function(user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
-}
+  return pool
+  .query("INSERT INTO users (name, email, password) VALUES ($1, $2, $3);", [
+    user.name,
+    user.email,
+    user.password,
+  ])
+  .catch((err) => console.log(err));
+};
+
 exports.addUser = addUser;
 
 /// Reservations
